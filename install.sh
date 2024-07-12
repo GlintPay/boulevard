@@ -1,1 +1,1 @@
-go install github.com/poblish/boulevard
+go install github.com/GlintPay/boulevard

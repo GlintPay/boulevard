@@ -65,9 +65,7 @@ type AlertRuleOutput struct {
 }
 
 // PrometheusOperatorRulesSpec https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#prometheusrulespec
-type PrometheusOperatorRulesSpec struct {
-	Groups []PrometheusOperatorAlertRulesGroup
-}
+type PrometheusOperatorRulesSpec []PrometheusOperatorAlertRulesGroup
 
 type PrometheusOperatorAlertRulesGroup struct {
 	Name  string

@@ -40,7 +40,7 @@ func main() {
 
 ````bash
 $ export PATH="$PATH:/Users/.../go/bin"
-$ go get -v github.com/poblish/boulevard
+$ go get -v github.com/GlintPay/boulevard
 ````
 
 **Generate dashboard:**

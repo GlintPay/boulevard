@@ -162,7 +162,7 @@ func (rg *RuleGenerator) postProcess(destFilePath string, metricPrefix string, m
 	case PrometheusAlertManagerFormat:
 		alertRulesSpec = AlertRulesGroup{Name: displayPrefix + " auto-generated alerts", Rules: alertEntries}
 	case PrometheusOperatorFormat:
-		alertRulesSpec = PrometheusOperatorRulesSpec{Groups: []PrometheusOperatorAlertRulesGroup{{Name: displayPrefix + " auto-generated alerts", Rules: operatorAlertEntries}}}
+		alertRulesSpec = []PrometheusOperatorAlertRulesGroup{{Name: displayPrefix + " auto-generated alerts", Rules: operatorAlertEntries}}
 	}
 
 	data, err := yaml.Marshal(&alertRulesSpec)

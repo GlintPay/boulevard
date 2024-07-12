@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/poblish/boulevard/generation"
+	"github.com/GlintPay/boulevard/generation"
 	"golang.org/x/tools/go/packages"
 	"gopkg.in/yaml.v2"
 )

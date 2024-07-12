@@ -49,7 +49,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestCustomOptions(t *testing.T) {
-	loadedPkgs, err := packages.Load(&scanConf, "github.com/poblish/boulevard/generation/test/d")
+	loadedPkgs, err := packages.Load(&scanConf, "github.com/GlintPay/boulevard/generation/test/d")
 	assert.NoError(t, err)
 
 	generator := &DashboardGenerator{}
@@ -155,7 +155,7 @@ func TestGrafanaDashboardGeneration(t *testing.T) {
 }
 
 func TestInvalidErrorLabelAnnotation(t *testing.T) {
-	loadedPkgs, err := packages.Load(&scanConf, "github.com/poblish/boulevard/generation/test/a")
+	loadedPkgs, err := packages.Load(&scanConf, "github.com/GlintPay/boulevard/generation/test/a")
 	assert.NoError(t, err)
 
 	generator := &DashboardGenerator{}
@@ -184,7 +184,7 @@ func TestInvalidErrorLabelAnnotation(t *testing.T) {
 }
 
 func TestMultipleDefaultsAnnotations(t *testing.T) {
-	loadedPkgs, err := packages.Load(&scanConf, "github.com/poblish/boulevard/generation/test/b")
+	loadedPkgs, err := packages.Load(&scanConf, "github.com/GlintPay/boulevard/generation/test/b")
 	assert.NoError(t, err)
 
 	generator := &DashboardGenerator{}
@@ -194,7 +194,7 @@ func TestMultipleDefaultsAnnotations(t *testing.T) {
 }
 
 func TestBadErrorRateAnnotations(t *testing.T) {
-	loadedPkgs, err := packages.Load(&scanConf, "github.com/poblish/boulevard/generation/test/c")
+	loadedPkgs, err := packages.Load(&scanConf, "github.com/GlintPay/boulevard/generation/test/c")
 	assert.NoError(t, err)
 
 	generator := &DashboardGenerator{}
