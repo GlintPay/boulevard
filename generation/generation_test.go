@@ -237,7 +237,7 @@ func sampleMetricUsage() { //nolint:unused,deadcode // Is used!!
 	fmt.Println(metrics.TestHelper().MetricNames())
 }
 
-func timedMethod(metrics *promenade.PrometheusMetrics) { //nolint:unused,deadcode  // Is used!!
+func timedMethod(metrics promenade.PrometheusMetrics) { //nolint:unused,deadcode  // Is used!!
 	defer metrics.Timer("t")()
 	fmt.Println("Whatever it is we're timing")
 }
