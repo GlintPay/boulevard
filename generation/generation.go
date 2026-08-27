@@ -266,6 +266,7 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 
 	metricType := ""
 	metricLabelString := ""
+	aggregationFunc := "sum"
 
 	if strings.HasPrefix(metricCall, "Counter") {
 		if metricCall == "CounterWithLabels" {
@@ -296,6 +297,31 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 		metricType = "errors"
 	} else if strings.HasPrefix(metricCall, "Gauge") {
 		metricType = "gauge"
+
+		if metricCall == "GaugeWithLabels" {
+			multipleLabels := metricCallArgs[1].(*ast.CompositeLit).Elts
+			labelNames := make([]string, len(multipleLabels))
+
+			for i, entry := range multipleLabels {
+				labelNames[i] = stripQuotes(entry.(*ast.BasicLit).Value)
+			}
+
+			metricLabelString = fmt.Sprintf(" by (%s)", strings.Join(labelNames, ","))
+
+			// Every replica of a replicated service reports the same logical
+			// value for a labelled gauge (e.g. trading_balance), unlike a
+			// counter where each replica's count is a genuinely distinct
+			// contribution. sum() would multiply the displayed value by the
+			// replica count; max() picks the (near-identical) current value.
+			aggregationFunc = "max"
+		} else if metricCall == "GaugeWithLabel" {
+			singleLabel := obtainConstantValue(pkg, metricCallArgs[1], func(value interface{}) string {
+				log.Fatalf("Could not obtain gauge label: %v", value)
+				return "" // unused
+			})
+			metricLabelString = fmt.Sprintf(" by (%s)", singleLabel)
+			aggregationFunc = "max"
+		}
 	} else if strings.HasPrefix(metricCall, "Histo") {
 		metricType = "histogram"
 	} else if strings.HasPrefix(metricCall, "Timer") {
@@ -332,7 +358,7 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 		return nil
 	}
 
-	return &metric{metricCall: metricCall, normalisedMetricName: normalisedMetricName, PanelTitle: metricName, MetricType: metricType, MetricLabels: metricLabelString}
+	return &metric{metricCall: metricCall, normalisedMetricName: normalisedMetricName, PanelTitle: metricName, MetricType: metricType, MetricLabels: metricLabelString, AggregationFunc: aggregationFunc}
 }
 
 const BadPrefix = "__bad__"
@@ -400,11 +426,12 @@ type metric struct {
 	metricCall           string
 	normalisedMetricName string
 
-	MetricsPrefix  string
-	MetricType     string
-	MetricLabels   string
-	FullMetricName string
-	PanelTitle     string
+	MetricsPrefix   string
+	MetricType      string
+	MetricLabels    string
+	AggregationFunc string // "sum" (default) or "max" for GaugeWithLabel(s) - see interceptMetric
+	FullMetricName  string
+	PanelTitle      string
 
 	ExtraLabelFilter string
 }
