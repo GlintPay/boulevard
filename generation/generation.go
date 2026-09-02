@@ -266,6 +266,7 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 
 	metricType := ""
 	metricLabelString := ""
+	legendFormat := ""
 	aggregationFunc := "sum"
 
 	if strings.HasPrefix(metricCall, "Counter") {
@@ -278,7 +279,8 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 				labelNames[i] = stripQuotes(entry.(*ast.BasicLit).Value)
 			}
 
-			metricLabelString = fmt.Sprintf(" by (%s)", strings.Join(labelNames, ","))
+			metricLabelString = byClause(labelNames)
+			legendFormat = legendFormatFor(labelNames)
 
 			metricType = "counter"
 		} else if metricCall == "CounterWithLabel" {
@@ -286,7 +288,8 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 				log.Fatalf("Could not obtain counter label: %v", value)
 				return "" // unused
 			})
-			metricLabelString = fmt.Sprintf(" by (%s)", singleLabel)
+			metricLabelString = byClause([]string{singleLabel})
+			legendFormat = legendFormatFor([]string{singleLabel})
 
 			metricType = "counter"
 		} else {
@@ -306,7 +309,8 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 				labelNames[i] = stripQuotes(entry.(*ast.BasicLit).Value)
 			}
 
-			metricLabelString = fmt.Sprintf(" by (%s)", strings.Join(labelNames, ","))
+			metricLabelString = byClause(labelNames)
+			legendFormat = legendFormatFor(labelNames)
 
 			// Every replica of a replicated service reports the same logical
 			// value for a labelled gauge (e.g. trading_balance), unlike a
@@ -319,7 +323,8 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 				log.Fatalf("Could not obtain gauge label: %v", value)
 				return "" // unused
 			})
-			metricLabelString = fmt.Sprintf(" by (%s)", singleLabel)
+			metricLabelString = byClause([]string{singleLabel})
+			legendFormat = legendFormatFor([]string{singleLabel})
 			aggregationFunc = "max"
 		}
 	} else if strings.HasPrefix(metricCall, "Histo") {
@@ -329,9 +334,11 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 
 		if metricCall == "TimerWithLabel" {
 			singleLabel := stripQuotes(metricCallArgs[1].(*ast.BasicLit).Value)
-			metricLabelString = fmt.Sprintf(" by (%s,quantile)", singleLabel)
+			metricLabelString = byClause([]string{singleLabel, "quantile"})
+			legendFormat = legendFormatFor([]string{singleLabel, "quantile"})
 		} else {
 			metricLabelString = " by (quantile)"
+			legendFormat = legendFormatFor([]string{"quantile"})
 		}
 
 	} else if strings.HasPrefix(metricCall, "Summary") {
@@ -346,19 +353,36 @@ func (dg *DashboardGenerator) interceptMetric(pkg *packages.Package, metricCall 
 				labelNames[i] = stripQuotes(entry.(*ast.BasicLit).Value)
 			}
 
-			metricLabelString = fmt.Sprintf(" by (%s,quantile)", strings.Join(labelNames, ","))
+			metricLabelString = byClause(append(labelNames, "quantile"))
+			legendFormat = legendFormatFor(append(labelNames, "quantile"))
 		} else if metricCall == "SummaryWithLabel" {
 
 			singleLabel := stripQuotes(metricCallArgs[1].(*ast.BasicLit).Value)
-			metricLabelString = fmt.Sprintf(" by (%s,quantile)", singleLabel)
+			metricLabelString = byClause([]string{singleLabel, "quantile"})
+			legendFormat = legendFormatFor([]string{singleLabel, "quantile"})
 		} else {
 			metricLabelString = " by (quantile)"
+			legendFormat = legendFormatFor([]string{"quantile"})
 		}
 	} else {
 		return nil
 	}
 
-	return &metric{metricCall: metricCall, normalisedMetricName: normalisedMetricName, PanelTitle: metricName, MetricType: metricType, MetricLabels: metricLabelString, AggregationFunc: aggregationFunc}
+	return &metric{metricCall: metricCall, normalisedMetricName: normalisedMetricName, PanelTitle: metricName, MetricType: metricType, MetricLabels: metricLabelString, LegendFormat: legendFormat, AggregationFunc: aggregationFunc}
+}
+
+func byClause(labelNames []string) string {
+	return fmt.Sprintf(" by (%s)", strings.Join(labelNames, ","))
+}
+
+// legendFormatFor builds a Grafana legendFormat string (e.g. "{{currency_pair}} {{side}}")
+// matching the labels a PromQL `by (...)` clause groups on.
+func legendFormatFor(labelNames []string) string {
+	parts := make([]string, len(labelNames))
+	for i, name := range labelNames {
+		parts[i] = fmt.Sprintf("{{%s}}", name)
+	}
+	return strings.Join(parts, " ")
 }
 
 const BadPrefix = "__bad__"
@@ -429,6 +453,7 @@ type metric struct {
 	MetricsPrefix   string
 	MetricType      string
 	MetricLabels    string
+	LegendFormat    string // Grafana legendFormat matching MetricLabels' `by (...)` clause, e.g. "{{currency_pair}} {{side}}"
 	AggregationFunc string // "sum" (default) or "max" for GaugeWithLabel(s) - see interceptMetric
 	FullMetricName  string
 	PanelTitle      string
