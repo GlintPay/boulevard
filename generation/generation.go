@@ -123,7 +123,7 @@ func (dg *DashboardGenerator) DiscoverMetrics(loadedPkgs []*packages.Package) ([
 	}
 
 	if !dg.foundMetricsObject {
-		log.Fatalf("ERROR: No Metrics found")
+		log.Printf("WARNING: No Metrics found")
 	}
 
 	if len(metrics) < 1 {
